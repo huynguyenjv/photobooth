@@ -179,11 +179,71 @@ const PhotoboothLayout = ({
       }
     }
 
-    // ============ DRAW DECORATIONS (stickers) ============
-    const drawDecorations = () => {
+    // ============ DRAW DECORATIONS (stickers, images) ============
+    const drawDecorations = async () => {
       if (!currentTemplate.decorations) return;
       
-      currentTemplate.decorations.forEach((dec) => {
+      for (const dec of currentTemplate.decorations) {
+        // Handle image decorations (like beer cans)
+        if (dec.type === 'image' && dec.src) {
+          try {
+            const img = await new Promise((resolve, reject) => {
+              const image = new Image();
+              image.onload = () => resolve(image);
+              image.onerror = reject;
+              image.src = dec.src;
+            });
+            
+            const size = dec.size || 50;
+            let x, y;
+            const margin = size / 2;
+            
+            switch (dec.position) {
+              case 'top-left':
+                x = margin - 10;
+                y = margin - 10;
+                break;
+              case 'top-right':
+                x = canvasWidth - margin + 10;
+                y = margin - 10;
+                break;
+              case 'bottom-left':
+                x = margin - 10;
+                y = canvasHeight - margin + 10;
+                break;
+              case 'bottom-right':
+                x = canvasWidth - margin + 10;
+                y = canvasHeight - margin + 10;
+                break;
+              default:
+                x = dec.x ?? canvasWidth / 2;
+                y = dec.y ?? canvasHeight / 2;
+            }
+            
+            ctx.save();
+            ctx.translate(x, y);
+            if (dec.rotate) {
+              ctx.rotate((dec.rotate * Math.PI) / 180);
+            }
+            
+            // Draw shadow
+            ctx.shadowColor = 'rgba(0,0,0,0.3)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            
+            // Calculate aspect ratio
+            const aspectRatio = img.width / img.height;
+            const drawW = size;
+            const drawH = size / aspectRatio;
+            
+            ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+            ctx.restore();
+          } catch (e) {
+            console.warn('Failed to load decoration image:', dec.src);
+          }
+        }
+        
         if (dec.type === 'emoji' || dec.type === 'sticker') {
           const fontSize = dec.size || 40;
           ctx.font = `${fontSize}px Arial`;
@@ -270,7 +330,44 @@ const PhotoboothLayout = ({
           ctx.fillText(dec.text, x, y);
           ctx.restore();
         }
-      });
+      }
+    };
+
+    // ============ DRAW LOGO IMAGE ============
+    const drawLogo = async () => {
+      if (!currentTemplate.logoImage) return;
+      
+      try {
+        const logo = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = currentTemplate.logoImage;
+        });
+        
+        // Draw logo in footer center
+        const footerY = canvasHeight - footerHeight;
+        const logoScale = currentTemplate.logoSize || 1;
+        const logoMaxHeight = (footerHeight - frameBorderWidth - 20) * logoScale;
+        const logoMaxWidth = innerW * 0.7;
+        
+        // Calculate size maintaining aspect ratio
+        const aspectRatio = logo.width / logo.height;
+        let logoH = Math.min(logoMaxHeight, logo.height * logoScale);
+        let logoW = logoH * aspectRatio;
+        
+        if (logoW > logoMaxWidth) {
+          logoW = logoMaxWidth;
+          logoH = logoW / aspectRatio;
+        }
+        
+        const logoX = (canvasWidth - logoW) / 2;
+        const logoY = footerY + (footerHeight - frameBorderWidth - logoH) / 2;
+        
+        ctx.drawImage(logo, logoX, logoY, logoW, logoH);
+      } catch (e) {
+        console.warn('Failed to load logo image:', currentTemplate.logoImage);
+      }
     };
 
     // ============ LOAD AND DRAW PHOTOS ============
@@ -351,10 +448,10 @@ const PhotoboothLayout = ({
       });
 
       // Draw decorations after photos
-      drawDecorations();
+      await drawDecorations();
 
       // ============ DRAW FOOTER / WATERMARK ============
-      if (showWatermark && currentTemplate.watermark?.text) {
+      if (showWatermark) {
         const footerY = canvasHeight - footerHeight;
         
         // Footer background (optional)
@@ -363,20 +460,54 @@ const PhotoboothLayout = ({
           ctx.fillRect(frameBorderWidth, footerY, innerW, footerHeight - frameBorderWidth);
         }
         
-        // Watermark text
-        ctx.font = `bold ${currentTemplate.watermark.fontSize || 20}px ${currentTemplate.watermark.font || 'Arial'}`;
-        ctx.fillStyle = currentTemplate.watermark.color;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
-        const textY = footerY + (footerHeight - frameBorderWidth) / 2 - 8;
-        ctx.fillText(currentTemplate.watermark.text, canvasWidth / 2, textY);
+        // If template has logo image, draw it instead of text
+        if (currentTemplate.logoImage) {
+          await drawLogo();
+        } else if (currentTemplate.watermark?.text) {
+          // Calculate text position
+          const hasSubtext = currentTemplate.subtext?.text;
+          const mainTextY = footerY + (footerHeight - frameBorderWidth) / 2 - (hasSubtext ? 10 : 5);
+          
+          // Watermark text with letter spacing
+          const fontSize = currentTemplate.watermark.fontSize || 20;
+          const letterSpacing = currentTemplate.watermark.letterSpacing || 0;
+          ctx.font = `bold ${fontSize}px ${currentTemplate.watermark.font || 'Arial'}`;
+          ctx.fillStyle = currentTemplate.watermark.color;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          
+          // Draw text with letter spacing
+          if (letterSpacing > 0) {
+            const text = currentTemplate.watermark.text;
+            const totalWidth = ctx.measureText(text).width + (text.length - 1) * letterSpacing;
+            let startX = canvasWidth / 2 - totalWidth / 2;
+            
+            for (let i = 0; i < text.length; i++) {
+              const char = text[i];
+              const charWidth = ctx.measureText(char).width;
+              ctx.fillText(char, startX + charWidth / 2, mainTextY);
+              startX += charWidth + letterSpacing;
+            }
+          } else {
+            ctx.fillText(currentTemplate.watermark.text, canvasWidth / 2, mainTextY);
+          }
+          
+          // Subtext (tagline)
+          if (hasSubtext) {
+            const subtextY = mainTextY + fontSize / 2 + 12;
+            ctx.font = `${currentTemplate.subtext.fontSize || 12}px ${currentTemplate.subtext.font || 'Arial'}`;
+            ctx.fillStyle = currentTemplate.subtext.color || 'rgba(255,255,255,0.6)';
+            ctx.fillText(currentTemplate.subtext.text, canvasWidth / 2, subtextY);
+          }
+        }
 
-        // Date
+        // Date (smaller, at bottom)
         const date = new Date().toLocaleDateString('vi-VN');
-        ctx.font = `${currentTemplate.watermark.dateFontSize || 14}px Arial`;
-        ctx.fillStyle = currentTemplate.textColor || currentTemplate.watermark.color;
-        ctx.fillText(date, canvasWidth / 2, textY + 22);
+        ctx.font = `${currentTemplate.watermark?.dateFontSize || 11}px Arial`;
+        ctx.fillStyle = currentTemplate.textColor || currentTemplate.watermark?.color || '#333';
+        ctx.globalAlpha = 0.5;
+        ctx.fillText(date, canvasWidth / 2, canvasHeight - frameBorderWidth - 10);
+        ctx.globalAlpha = 1;
       }
 
       setFinalImage(canvas.toDataURL('image/png'));

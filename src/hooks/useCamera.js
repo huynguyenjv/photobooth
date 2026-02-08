@@ -183,6 +183,50 @@ export const useCamera = () => {
             data[i + 2] = Math.min(255, data[i + 2] + 30);
           }
           break;
+        case 'beauty':
+        case 'beauty-soft':
+        case 'beauty-glow': {
+          // Làm sáng và mịn da
+          const brightness = filter === 'beauty-glow' ? 1.12 : filter === 'beauty-soft' ? 1.08 : 1.05;
+          const contrast = filter === 'beauty-soft' ? 0.92 : 0.95;
+          for (let i = 0; i < data.length; i += 4) {
+            // Tăng sáng
+            data[i] = Math.min(255, data[i] * brightness);
+            data[i + 1] = Math.min(255, data[i + 1] * brightness);
+            data[i + 2] = Math.min(255, data[i + 2] * brightness);
+            // Giảm contrast để mịn hơn
+            data[i] = Math.min(255, Math.max(0, contrast * (data[i] - 128) + 128));
+            data[i + 1] = Math.min(255, Math.max(0, contrast * (data[i + 1] - 128) + 128));
+            data[i + 2] = Math.min(255, Math.max(0, contrast * (data[i + 2] - 128) + 128));
+            // Tăng đỏ/hồng nhẹ cho da
+            data[i] = Math.min(255, data[i] + 5);
+          }
+          break;
+        }
+        case 'pink':
+          for (let i = 0; i < data.length; i += 4) {
+            data[i] = Math.min(255, data[i] * 1.1 + 15);
+            data[i + 1] = Math.min(255, data[i + 1] * 0.95);
+            data[i + 2] = Math.min(255, data[i + 2] * 1.05 + 10);
+          }
+          break;
+        case 'vivid': {
+          const satFactor = 1.4;
+          for (let i = 0; i < data.length; i += 4) {
+            const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            data[i] = Math.min(255, Math.max(0, gray + satFactor * (data[i] - gray)));
+            data[i + 1] = Math.min(255, Math.max(0, gray + satFactor * (data[i + 1] - gray)));
+            data[i + 2] = Math.min(255, Math.max(0, gray + satFactor * (data[i + 2] - gray)));
+          }
+          break;
+        }
+        case 'fade':
+          for (let i = 0; i < data.length; i += 4) {
+            data[i] = Math.min(255, data[i] * 0.9 + 25);
+            data[i + 1] = Math.min(255, data[i + 1] * 0.9 + 25);
+            data[i + 2] = Math.min(255, data[i + 2] * 0.9 + 25);
+          }
+          break;
         default:
           break;
       }

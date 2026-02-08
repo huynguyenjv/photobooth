@@ -10,6 +10,7 @@ import {
   CaptureButton,
   ControlPanel,
   TemplateSelector,
+  ImageUpload,
 } from './components';
 import { playShutterSound } from './utils/sound';
 import './App.css';
@@ -61,6 +62,12 @@ function App() {
   const handleRemovePhoto = useCallback((index) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   }, []);
+
+  const handleUploadPhoto = useCallback((imageData) => {
+    if (photos.length < MAX_PHOTOS) {
+      setPhotos((prev) => [...prev, imageData]);
+    }
+  }, [photos.length]);
 
   const handleReset = useCallback(() => {
     setPhotos([]);
@@ -122,6 +129,13 @@ function App() {
               onSwitchCamera={switchCamera}
               isStreaming={isStreaming}
               onStopCamera={stopCamera}
+            />
+
+            <ImageUpload
+              onUpload={handleUploadPhoto}
+              disabled={isCountdownActive}
+              maxPhotos={MAX_PHOTOS}
+              currentCount={photos.length}
             />
           </div>
 

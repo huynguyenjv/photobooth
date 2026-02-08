@@ -7,3 +7,4 @@ export { default as PhotoboothLayout } from './PhotoboothLayout';
 export { default as CaptureButton } from './CaptureButton';
 export { default as ControlPanel } from './ControlPanel';
 export { default as TemplateSelector } from './TemplateSelector';
+export { default as ImageUpload } from './ImageUpload';
