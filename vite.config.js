@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/Photobooth/',  // GitHub Pages repo name
+  base: '/photobooth/',  // GitHub Pages repo name (lowercase)
   build: {
     outDir: 'docs',  // Output to docs folder for GitHub Pages
   },
