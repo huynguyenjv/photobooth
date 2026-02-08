@@ -9,6 +9,7 @@ import {
   PhotoboothLayout,
   CaptureButton,
   ControlPanel,
+  TemplateSelector,
 } from './components';
 import { playShutterSound } from './utils/sound';
 import './App.css';
@@ -31,6 +32,7 @@ function App() {
   const [selectedFilter, setSelectedFilter] = useState('none');
   const [aspectRatio, setAspectRatio] = useState('4:3');
   const [selectedLayout, setSelectedLayout] = useState('2x2');
+  const [selectedTemplate, setSelectedTemplate] = useState('classic');
   const [showWatermark, setShowWatermark] = useState(true);
   const [isCountdownActive, setIsCountdownActive] = useState(false);
   const [flashTrigger, setFlashTrigger] = useState(0);
@@ -131,6 +133,11 @@ function App() {
               onRemovePhoto={handleRemovePhoto}
             />
 
+            <TemplateSelector
+              selectedTemplate={selectedTemplate}
+              onSelectTemplate={setSelectedTemplate}
+            />
+
             <PhotoboothLayout
               photos={photos}
               layout={selectedLayout}
@@ -139,6 +146,7 @@ function App() {
               onReset={handleReset}
               onPrint={handlePrint}
               showWatermark={showWatermark}
+              template={selectedTemplate}
             />
           </div>
         </div>

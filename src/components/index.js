@@ -6,3 +6,4 @@ export { default as PhotoPreview } from './PhotoPreview';
 export { default as PhotoboothLayout } from './PhotoboothLayout';
 export { default as CaptureButton } from './CaptureButton';
 export { default as ControlPanel } from './ControlPanel';
+export { default as TemplateSelector } from './TemplateSelector';

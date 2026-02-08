@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { LAYOUTS } from '../utils/filters';
+import { getTemplateById } from '../utils/templates';
 import './PhotoboothLayout.css';
 
 const PhotoboothLayout = ({
@@ -10,11 +11,13 @@ const PhotoboothLayout = ({
   onReset,
   onPrint,
   showWatermark,
+  template = 'classic',
 }) => {
   const canvasRef = useRef(null);
   const [finalImage, setFinalImage] = useState(null);
 
   const currentLayout = LAYOUTS.find((l) => l.id === layout) || LAYOUTS[0];
+  const currentTemplate = getTemplateById(template);
   const requiredPhotos = currentLayout.count;
   const isComplete = photos.length >= requiredPhotos;
 
@@ -24,34 +27,30 @@ const PhotoboothLayout = ({
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
 
-    // Layout settings
-    const padding = 20;
-    const gap = 10;
+    // Layout settings - PRO design với khoảng cách rộng hơn
+    const frameBorderWidth = currentTemplate.frame?.width || 12;
+    const photoGap = currentTemplate.photoGap || 20; // Khoảng cách giữa các ảnh
+    const innerPadding = currentTemplate.innerPadding || 25; // Padding bên trong
     const photoWidth = 300;
     const photoHeight = 225; // 4:3 ratio
-    const borderRadius = 12;
+    const borderRadius = currentTemplate.border?.radius || 8;
+    const headerHeight = currentTemplate.header?.height || 0;
+    const footerHeight = showWatermark ? (currentTemplate.footer?.height || 80) : 40;
 
     const { cols, rows } = currentLayout;
 
-    const canvasWidth = padding * 2 + cols * photoWidth + (cols - 1) * gap;
-    const canvasHeight = padding * 2 + rows * photoHeight + (rows - 1) * gap + (showWatermark ? 40 : 0);
+    // Tính toán canvas size
+    const contentWidth = cols * photoWidth + (cols - 1) * photoGap;
+    const contentHeight = rows * photoHeight + (rows - 1) * photoGap;
+    const canvasWidth = frameBorderWidth * 2 + innerPadding * 2 + contentWidth;
+    const canvasHeight = frameBorderWidth * 2 + headerHeight + innerPadding * 2 + contentHeight + footerHeight;
 
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
 
-    // Background with gradient
-    const gradient = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
-    gradient.addColorStop(0, '#1a1a2e');
-    gradient.addColorStop(1, '#16213e');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-    // Add decorative border
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(5, 5, canvasWidth - 10, canvasHeight - 10);
-
-    // Helper function for rounded rect
+    // ============ HELPER FUNCTIONS ============
+    
+    // Rounded rect helper
     const roundRect = (x, y, w, h, r) => {
       ctx.beginPath();
       ctx.moveTo(x + r, y);
@@ -66,7 +65,215 @@ const PhotoboothLayout = ({
       ctx.closePath();
     };
 
-    // Load and draw images
+    // Draw checkered pattern (như mẫu)
+    const drawCheckeredPattern = (x, y, width, height, color1, color2, squareSize = 12) => {
+      const cols = Math.ceil(width / squareSize);
+      const rows = Math.ceil(height / squareSize);
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          ctx.fillStyle = (row + col) % 2 === 0 ? color1 : color2;
+          ctx.fillRect(x + col * squareSize, y + row * squareSize, squareSize, squareSize);
+        }
+      }
+    };
+
+    // Draw hearts pattern
+    const drawHeartsPattern = (x, y, width, height, color, size = 8, spacing = 30) => {
+      ctx.fillStyle = color;
+      ctx.font = `${size}px Arial`;
+      for (let py = y + spacing / 2; py < y + height; py += spacing) {
+        for (let px = x + spacing / 2; px < x + width; px += spacing) {
+          ctx.fillText('♥', px, py);
+        }
+      }
+    };
+
+    // Draw dots pattern
+    const drawDotsPattern = (x, y, width, height, color, radius = 3, spacing = 20) => {
+      ctx.fillStyle = color;
+      for (let py = y + spacing / 2; py < y + height; py += spacing) {
+        for (let px = x + spacing / 2; px < x + width; px += spacing) {
+          ctx.beginPath();
+          ctx.arc(px, py, radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    };
+
+    // Draw stripes pattern
+    const drawStripesPattern = (x, y, width, height, color1, color2, stripeWidth = 8) => {
+      const totalStripes = Math.ceil((width + height) / stripeWidth) * 2;
+      for (let i = 0; i < totalStripes; i++) {
+        ctx.fillStyle = i % 2 === 0 ? color1 : color2;
+        ctx.beginPath();
+        const offset = i * stripeWidth - height;
+        ctx.moveTo(x + offset, y);
+        ctx.lineTo(x + offset + stripeWidth, y);
+        ctx.lineTo(x + offset + stripeWidth + height, y + height);
+        ctx.lineTo(x + offset + height, y + height);
+        ctx.closePath();
+        ctx.fill();
+      }
+    };
+
+    // ============ DRAW MAIN FRAME BORDER ============
+    ctx.fillStyle = currentTemplate.frame?.color || '#000000';
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+    // ============ DRAW HEADER (optional checkered/pattern) ============
+    if (currentTemplate.header && headerHeight > 0) {
+      const headerY = frameBorderWidth;
+      if (currentTemplate.header.pattern === 'checkered') {
+        drawCheckeredPattern(
+          frameBorderWidth, headerY,
+          canvasWidth - frameBorderWidth * 2, headerHeight,
+          currentTemplate.header.colors?.[0] || '#000',
+          currentTemplate.header.colors?.[1] || '#fff',
+          currentTemplate.header.squareSize || 12
+        );
+      } else if (currentTemplate.header.pattern === 'stripes') {
+        drawStripesPattern(
+          frameBorderWidth, headerY,
+          canvasWidth - frameBorderWidth * 2, headerHeight,
+          currentTemplate.header.colors?.[0] || '#000',
+          currentTemplate.header.colors?.[1] || '#fff'
+        );
+      }
+    }
+
+    // ============ DRAW INNER BACKGROUND ============
+    const innerX = frameBorderWidth;
+    const innerY = frameBorderWidth + headerHeight;
+    const innerW = canvasWidth - frameBorderWidth * 2;
+    const innerH = canvasHeight - frameBorderWidth * 2 - headerHeight;
+
+    // Background color/gradient
+    if (currentTemplate.background.type === 'gradient') {
+      const gradient = ctx.createLinearGradient(innerX, innerY, innerX, innerY + innerH);
+      gradient.addColorStop(0, currentTemplate.background.colors[0]);
+      gradient.addColorStop(1, currentTemplate.background.colors[1]);
+      ctx.fillStyle = gradient;
+    } else {
+      ctx.fillStyle = currentTemplate.background.colors[0];
+    }
+    ctx.fillRect(innerX, innerY, innerW, innerH);
+
+    // ============ DRAW BACKGROUND PATTERN ============
+    if (currentTemplate.background.pattern) {
+      const patternColor = currentTemplate.background.patternColor || 'rgba(0,0,0,0.1)';
+      switch (currentTemplate.background.pattern) {
+        case 'hearts':
+          drawHeartsPattern(innerX, innerY, innerW, innerH, patternColor, 10, 35);
+          break;
+        case 'dots':
+          drawDotsPattern(innerX, innerY, innerW, innerH, patternColor, 4, 25);
+          break;
+        case 'checkered':
+          drawCheckeredPattern(innerX, innerY, innerW, innerH, 
+            currentTemplate.background.colors[0],
+            currentTemplate.background.patternColor || '#ffffff22',
+            20);
+          break;
+        default:
+          break;
+      }
+    }
+
+    // ============ DRAW DECORATIONS (stickers) ============
+    const drawDecorations = () => {
+      if (!currentTemplate.decorations) return;
+      
+      currentTemplate.decorations.forEach((dec) => {
+        if (dec.type === 'emoji' || dec.type === 'sticker') {
+          const fontSize = dec.size || 40;
+          ctx.font = `${fontSize}px Arial`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+
+          let x, y;
+          const margin = fontSize / 2 + 10;
+          
+          switch (dec.position) {
+            case 'top-left':
+              x = frameBorderWidth + margin;
+              y = frameBorderWidth + headerHeight + margin;
+              break;
+            case 'top-right':
+              x = canvasWidth - frameBorderWidth - margin;
+              y = frameBorderWidth + headerHeight + margin;
+              break;
+            case 'bottom-left':
+              x = frameBorderWidth + margin;
+              y = canvasHeight - footerHeight - margin;
+              break;
+            case 'bottom-right':
+              x = canvasWidth - frameBorderWidth - margin;
+              y = canvasHeight - footerHeight - margin;
+              break;
+            case 'left-center':
+              x = frameBorderWidth + margin;
+              y = canvasHeight / 2;
+              break;
+            case 'right-center':
+              x = canvasWidth - frameBorderWidth - margin;
+              y = canvasHeight / 2;
+              break;
+            default:
+              if (dec.x !== undefined && dec.y !== undefined) {
+                x = dec.x;
+                y = dec.y;
+              } else {
+                return;
+              }
+          }
+          
+          // Draw shadow for stickers
+          if (dec.shadow !== false) {
+            ctx.shadowColor = 'rgba(0,0,0,0.3)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+          }
+          
+          ctx.fillText(dec.content, x, y);
+          
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+        }
+        
+        // Text decoration (like "LOVE")
+        if (dec.type === 'text') {
+          ctx.save();
+          ctx.font = `bold ${dec.size || 32}px ${dec.font || 'Arial'}`;
+          ctx.fillStyle = dec.color || '#333';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          
+          let x = canvasWidth / 2;
+          let y = canvasHeight - footerHeight / 2;
+          
+          if (dec.position === 'bottom-left') {
+            x = frameBorderWidth + 60;
+          } else if (dec.position === 'bottom-right') {
+            x = canvasWidth - frameBorderWidth - 60;
+          }
+          
+          // Outline effect
+          if (dec.outline) {
+            ctx.strokeStyle = dec.outlineColor || '#000';
+            ctx.lineWidth = dec.outlineWidth || 3;
+            ctx.strokeText(dec.text, x, y);
+          }
+          
+          ctx.fillText(dec.text, x, y);
+          ctx.restore();
+        }
+      });
+    };
+
+    // ============ LOAD AND DRAW PHOTOS ============
     const loadImages = async () => {
       const images = await Promise.all(
         photos.slice(0, requiredPhotos).map((src) => {
@@ -79,23 +286,36 @@ const PhotoboothLayout = ({
         })
       );
 
+      // Photo area starts after frame border, header, and padding
+      const photoAreaX = frameBorderWidth + innerPadding;
+      const photoAreaY = frameBorderWidth + headerHeight + innerPadding;
+
       images.forEach((img, index) => {
         if (!img) return;
 
         const col = index % cols;
         const row = Math.floor(index / cols);
-        const x = padding + col * (photoWidth + gap);
-        const y = padding + row * (photoHeight + gap);
+        const x = photoAreaX + col * (photoWidth + photoGap);
+        const y = photoAreaY + row * (photoHeight + photoGap);
 
-        // Draw shadow
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-        ctx.shadowBlur = 10;
-        ctx.shadowOffsetX = 2;
-        ctx.shadowOffsetY = 2;
+        // Draw photo border/frame
+        const photoBorderWidth = currentTemplate.border?.width || 6;
+        
+        // Shadow for photo
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+        ctx.shadowBlur = 12;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 4;
 
-        // Draw white border
-        ctx.fillStyle = '#fff';
-        roundRect(x - 4, y - 4, photoWidth + 8, photoHeight + 8, borderRadius + 2);
+        // Photo border background
+        ctx.fillStyle = currentTemplate.border?.color || '#ffffff';
+        roundRect(
+          x - photoBorderWidth,
+          y - photoBorderWidth,
+          photoWidth + photoBorderWidth * 2,
+          photoHeight + photoBorderWidth * 2,
+          borderRadius + 2
+        );
         ctx.fill();
 
         // Reset shadow
@@ -104,32 +324,66 @@ const PhotoboothLayout = ({
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
 
-        // Clip and draw image
+        // Clip and draw image with rounded corners
         ctx.save();
         roundRect(x, y, photoWidth, photoHeight, borderRadius);
         ctx.clip();
-        ctx.drawImage(img, x, y, photoWidth, photoHeight);
+        
+        // Scale image to cover (like CSS object-fit: cover)
+        const imgRatio = img.width / img.height;
+        const photoRatio = photoWidth / photoHeight;
+        let drawWidth, drawHeight, drawX, drawY;
+        
+        if (imgRatio > photoRatio) {
+          drawHeight = photoHeight;
+          drawWidth = img.width * (photoHeight / img.height);
+          drawX = x - (drawWidth - photoWidth) / 2;
+          drawY = y;
+        } else {
+          drawWidth = photoWidth;
+          drawHeight = img.height * (photoWidth / img.width);
+          drawX = x;
+          drawY = y - (drawHeight - photoHeight) / 2;
+        }
+        
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
         ctx.restore();
       });
 
-      // Add watermark if enabled
-      if (showWatermark) {
-        ctx.font = 'bold 16px Arial';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.textAlign = 'center';
-        ctx.fillText('📷 Photobooth', canvasWidth / 2, canvasHeight - 15);
+      // Draw decorations after photos
+      drawDecorations();
 
-        // Add date
+      // ============ DRAW FOOTER / WATERMARK ============
+      if (showWatermark && currentTemplate.watermark?.text) {
+        const footerY = canvasHeight - footerHeight;
+        
+        // Footer background (optional)
+        if (currentTemplate.footer?.background) {
+          ctx.fillStyle = currentTemplate.footer.background;
+          ctx.fillRect(frameBorderWidth, footerY, innerW, footerHeight - frameBorderWidth);
+        }
+        
+        // Watermark text
+        ctx.font = `bold ${currentTemplate.watermark.fontSize || 20}px ${currentTemplate.watermark.font || 'Arial'}`;
+        ctx.fillStyle = currentTemplate.watermark.color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        const textY = footerY + (footerHeight - frameBorderWidth) / 2 - 8;
+        ctx.fillText(currentTemplate.watermark.text, canvasWidth / 2, textY);
+
+        // Date
         const date = new Date().toLocaleDateString('vi-VN');
-        ctx.font = '12px Arial';
-        ctx.fillText(date, canvasWidth / 2, canvasHeight - 35);
+        ctx.font = `${currentTemplate.watermark.dateFontSize || 14}px Arial`;
+        ctx.fillStyle = currentTemplate.textColor || currentTemplate.watermark.color;
+        ctx.fillText(date, canvasWidth / 2, textY + 22);
       }
 
       setFinalImage(canvas.toDataURL('image/png'));
     };
 
     loadImages();
-  }, [photos, layout, isComplete, showWatermark, currentLayout, requiredPhotos]);
+  }, [photos, layout, isComplete, showWatermark, currentLayout, requiredPhotos, currentTemplate, template]);
 
   const handleDownload = () => {
     if (!finalImage) return;

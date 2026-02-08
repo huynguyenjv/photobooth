@@ -1,12 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { playBeepSound } from '../utils/sound';
 import './Countdown.css';
 
 // Inner component that handles the actual countdown
 const CountdownTimer = ({ seconds, onComplete }) => {
   const [count, setCount] = useState(seconds);
+  const onCompleteRef = useRef(onComplete);
+  const hasCompletedRef = useRef(false);
+
+  // Keep ref updated
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
+    // Reset completion flag
+    hasCompletedRef.current = false;
+    
     // Play initial beep
     playBeepSound(false);
 
@@ -15,8 +25,12 @@ const CountdownTimer = ({ seconds, onComplete }) => {
         if (prev <= 1) {
           clearInterval(interval);
           playBeepSound(true);
+          // Use setTimeout and check flag to prevent double call
           setTimeout(() => {
-            onComplete();
+            if (!hasCompletedRef.current) {
+              hasCompletedRef.current = true;
+              onCompleteRef.current();
+            }
           }, 100);
           return 0;
         }
@@ -26,7 +40,7 @@ const CountdownTimer = ({ seconds, onComplete }) => {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [seconds, onComplete]);
+  }, [seconds]); // Remove onComplete from deps
 
   if (count === 0) return null;
 
