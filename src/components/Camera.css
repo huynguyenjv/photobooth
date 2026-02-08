@@ -83,17 +83,19 @@
   .camera-wrapper {
     border-radius: 12px;
     border-width: 2px;
+    max-width: 100%;
   }
 
   .camera-icon,
   .error-icon {
-    font-size: 3rem;
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
   }
 
   .camera-placeholder p,
   .camera-error p {
-    font-size: 0.875rem;
-    padding: 0 1rem;
+    font-size: 0.8rem;
+    padding: 0 0.75rem;
     text-align: center;
   }
 }
