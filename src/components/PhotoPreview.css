@@ -102,3 +102,44 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+@media (max-width: 480px) {
+  .photo-preview {
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+  }
+
+  .preview-title {
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .preview-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.35rem;
+  }
+
+  .preview-item {
+    border-radius: 6px;
+  }
+
+  .remove-button {
+    width: 18px;
+    height: 18px;
+    font-size: 0.6rem;
+    top: 2px;
+    right: 2px;
+    opacity: 1; /* Always visible on mobile */
+  }
+
+  .photo-number {
+    font-size: 0.55rem;
+    padding: 1px 4px;
+    bottom: 2px;
+    left: 2px;
+  }
+
+  .placeholder-number {
+    font-size: 1.25rem;
+  }
+}

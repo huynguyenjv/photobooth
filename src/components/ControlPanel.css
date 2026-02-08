@@ -102,6 +102,42 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: white;
+  color: #fff;
   font-size: 0.75rem;
+}
+
+@media (max-width: 480px) {
+  .control-panel {
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    gap: 0.75rem;
+  }
+
+  .control-label {
+    font-size: 0.8rem;
+  }
+
+  .control-options {
+    gap: 0.35rem;
+  }
+
+  .control-option {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+    border-radius: 5px;
+  }
+
+  .control-button {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .checkbox-label {
+    font-size: 0.8rem;
+  }
+
+  .checkbox-custom {
+    width: 18px;
+    height: 18px;
+  }
 }

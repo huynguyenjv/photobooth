@@ -148,3 +148,60 @@
     font-size: 0.7rem;
   }
 }
+
+@media (max-width: 480px) {
+  .template-selector {
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+  }
+
+  .template-title {
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .category-tabs {
+    gap: 0.2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .category-tab {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.65rem;
+    border-radius: 15px;
+  }
+
+  .category-icon {
+    font-size: 0.75rem;
+  }
+
+  .template-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35rem;
+    max-height: 150px;
+  }
+
+  .template-card {
+    padding: 0.5rem 0.25rem;
+    border-radius: 8px;
+    min-height: 60px;
+    border-width: 2px;
+  }
+
+  .template-icon {
+    font-size: 1.25rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .template-name {
+    font-size: 0.6rem;
+  }
+
+  .template-check {
+    width: 14px;
+    height: 14px;
+    font-size: 0.55rem;
+    top: 2px;
+    right: 2px;
+  }
+}

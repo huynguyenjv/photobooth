@@ -78,3 +78,22 @@
     transform: translateX(10px);
   }
 }
+
+@media (max-width: 480px) {
+  .camera-wrapper {
+    border-radius: 12px;
+    border-width: 2px;
+  }
+
+  .camera-icon,
+  .error-icon {
+    font-size: 3rem;
+  }
+
+  .camera-placeholder p,
+  .camera-error p {
+    font-size: 0.875rem;
+    padding: 0 1rem;
+    text-align: center;
+  }
+}

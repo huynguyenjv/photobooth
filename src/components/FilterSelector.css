@@ -62,3 +62,33 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+@media (max-width: 480px) {
+  .filter-selector {
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+  }
+
+  .filter-title {
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .filter-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+  }
+
+  .filter-button {
+    padding: 0.5rem 0.25rem;
+    border-radius: 6px;
+  }
+
+  .filter-preview {
+    font-size: 1.25rem;
+  }
+
+  .filter-name {
+    font-size: 0.65rem;
+  }
+}

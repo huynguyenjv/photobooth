@@ -133,3 +133,39 @@
     height: 52px;
   }
 }
+
+@media (max-width: 480px) {
+  .start-button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    gap: 0.5rem;
+  }
+
+  .button-icon {
+    font-size: 1.25rem;
+  }
+
+  .capture-container {
+    gap: 0.5rem;
+  }
+
+  .capture-button {
+    width: 65px;
+    height: 65px;
+    border-width: 3px;
+  }
+
+  .capture-inner {
+    width: 48px;
+    height: 48px;
+  }
+
+  .capture-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .capture-hint {
+    font-size: 0.75rem;
+  }
+}
