@@ -169,63 +169,63 @@
 
 @media (max-width: 480px) {
   .photobooth-layout {
-    padding: 0.6rem;
-    margin: 0.5rem 0;
+    padding: 0.4rem;
+    margin: 0.35rem 0;
   }
 
   .layout-header {
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
+    gap: 0.35rem;
+    margin-bottom: 0.5rem;
   }
 
   .layout-header h3 {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
   }
 
   .layout-selector {
-    gap: 0.25rem;
+    gap: 0.2rem;
   }
 
   .layout-option {
-    padding: 0.35rem 0.6rem;
-    font-size: 0.7rem;
-    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.6rem;
+    border-radius: 5px;
   }
 
   .layout-preview {
-    margin: 0.5rem 0;
+    margin: 0.4rem 0;
   }
 
   .layout-canvas {
-    border-radius: 8px;
-    max-height: 350px;
+    border-radius: 6px;
+    max-height: 280px;
     width: auto;
   }
 
   .layout-empty {
-    padding: 1.5rem 1rem;
+    padding: 1rem 0.75rem;
   }
 
   .empty-icon {
-    font-size: 2rem;
+    font-size: 1.5rem;
   }
 
   .layout-empty p {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
   }
 
   .layout-actions {
-    gap: 0.5rem;
+    gap: 0.35rem;
   }
 
   .action-button {
-    padding: 0.7rem 1rem;
-    font-size: 0.85rem;
-    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    border-radius: 6px;
     flex: 1;
   }
 
   .action-button span {
-    font-size: 1.1rem;
+    font-size: 0.9rem;
   }
 }
