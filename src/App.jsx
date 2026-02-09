@@ -8,7 +8,6 @@ import {
   PhotoPreview,
   PhotoboothLayout,
   CaptureButton,
-  ControlPanel,
   TemplateSelector,
   ImageUpload,
 } from './components';
@@ -23,12 +22,12 @@ function App() {
     videoRef,
     isStreaming,
     error,
-    zoomLevel,
+    isWideAngle,
     isFullscreen,
     startCamera,
     stopCamera,
     switchCamera,
-    toggleZoom,
+    toggleWideAngle,
     toggleFullscreen,
     captureFrame,
   } = useCamera();
@@ -41,11 +40,29 @@ function App() {
   const [showWatermark, setShowWatermark] = useState(true);
   const [isCountdownActive, setIsCountdownActive] = useState(false);
   const [flashTrigger, setFlashTrigger] = useState(0);
+  const [mobileTab, setMobileTab] = useState('camera'); // 'camera' | 'preview'
 
   const handleStartCapture = useCallback(() => {
     if (photos.length >= MAX_PHOTOS || isCountdownActive) return;
     setIsCountdownActive(true);
   }, [photos.length, isCountdownActive]);
+
+  // Direct capture for fullscreen mode (no countdown)
+  const handleDirectCapture = useCallback(() => {
+    if (photos.length >= MAX_PHOTOS) return;
+    
+    // Trigger flash effect
+    setFlashTrigger((prev) => prev + 1);
+
+    // Play shutter sound
+    playShutterSound();
+
+    // Capture the frame immediately
+    const photoData = captureFrame(selectedFilter, aspectRatio);
+    if (photoData) {
+      setPhotos((prev) => [...prev, photoData]);
+    }
+  }, [photos.length, captureFrame, selectedFilter, aspectRatio]);
 
   const handleCountdownComplete = useCallback(() => {
     setIsCountdownActive(false);
@@ -96,13 +113,28 @@ function App() {
           <span className="title-icon">📸</span>
           Photobooth
         </h1>
-        <p className="app-subtitle">Chụp ảnh kỷ niệm của bạn</p>
       </header>
+
+      {/* Mobile Tab Switcher */}
+      <div className="mobile-tabs">
+        <button 
+          className={`mobile-tab ${mobileTab === 'camera' ? 'active' : ''}`}
+          onClick={() => setMobileTab('camera')}
+        >
+          📷 Chụp ảnh
+        </button>
+        <button 
+          className={`mobile-tab ${mobileTab === 'preview' ? 'active' : ''}`}
+          onClick={() => setMobileTab('preview')}
+        >
+          🖼️ Xem ảnh {photos.length > 0 && `(${photos.length})`}
+        </button>
+      </div>
 
       <main className="app-main">
         <div className="app-grid">
-          {/* Left Panel - Camera & Controls */}
-          <div className="panel panel-camera">
+          {/* Camera Panel */}
+          <div className={`panel panel-camera ${mobileTab !== 'camera' ? 'mobile-hidden' : ''}`}>
             <Camera
               ref={videoRef}
               filter={selectedFilter}
@@ -110,9 +142,33 @@ function App() {
               isStreaming={isStreaming}
               error={error}
               isFullscreen={isFullscreen}
-              zoomLevel={zoomLevel}
+              isWideAngle={isWideAngle}
               onExitFullscreen={handleExitFullscreen}
+              onCapture={handleDirectCapture}
+              onSwitchCamera={switchCamera}
+              onToggleWide={toggleWideAngle}
+              photosCount={photos.length}
+              maxPhotos={MAX_PHOTOS}
             />
+
+            {/* Quick camera controls */}
+            {isStreaming && (
+              <div className="quick-controls">
+                <button className="quick-btn" onClick={switchCamera} title="Đổi camera">
+                  🔄
+                </button>
+                <button 
+                  className={`quick-btn ${isWideAngle ? 'active' : ''}`} 
+                  onClick={toggleWideAngle}
+                  title="Góc rộng"
+                >
+                  {isWideAngle ? '1x' : '0.5x'}
+                </button>
+                <button className="quick-btn" onClick={toggleFullscreen} title="Toàn màn hình">
+                  ⛶
+                </button>
+              </div>
+            )}
 
             <div className="capture-section">
               <CaptureButton
@@ -132,19 +188,6 @@ function App() {
               disabled={!isStreaming || isCountdownActive}
             />
 
-            <ControlPanel
-              aspectRatio={aspectRatio}
-              onAspectRatioChange={setAspectRatio}
-              showWatermark={showWatermark}
-              onWatermarkChange={setShowWatermark}
-              onSwitchCamera={switchCamera}
-              isStreaming={isStreaming}
-              onStopCamera={stopCamera}
-              zoomLevel={zoomLevel}
-              onToggleZoom={toggleZoom}
-              onToggleFullscreen={toggleFullscreen}
-            />
-
             <ImageUpload
               onUpload={handleUploadPhoto}
               disabled={isCountdownActive}
@@ -153,8 +196,8 @@ function App() {
             />
           </div>
 
-          {/* Right Panel - Preview & Layout */}
-          <div className="panel panel-preview">
+          {/* Preview Panel */}
+          <div className={`panel panel-preview ${mobileTab !== 'preview' ? 'mobile-hidden' : ''}`}>
             <PhotoPreview
               photos={photos}
               maxPhotos={MAX_PHOTOS}
@@ -179,12 +222,6 @@ function App() {
           </div>
         </div>
       </main>
-
-      <footer className="app-footer">
-        <p>
-          Made with ❤️ using React • Không cần backend • Chạy hoàn toàn trên trình duyệt
-        </p>
-      </footer>
 
       {/* Overlays */}
       <Countdown

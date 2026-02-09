@@ -130,6 +130,17 @@ body {
 }
 
 /* Responsive Styles */
+
+/* Mobile Tabs - hidden on desktop */
+.mobile-tabs {
+  display: none;
+}
+
+/* Quick Controls */
+.quick-controls {
+  display: none;
+}
+
 @media (max-width: 1024px) {
   .app-grid {
     grid-template-columns: 1fr;
@@ -165,6 +176,38 @@ body {
   .app-grid {
     gap: 0.75rem;
   }
+
+  /* Show quick controls on tablet */
+  .quick-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+  }
+
+  .quick-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: #fff;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .quick-btn:hover, .quick-btn.active {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  .quick-btn.active {
+    background: rgba(255, 215, 0, 0.3);
+    color: #ffd700;
+  }
 }
 
 @media (max-width: 480px) {
@@ -174,33 +217,66 @@ body {
 
   body {
     background: #1a1a2e;
+    overflow-x: hidden;
+  }
+
+  .app {
+    min-height: 100dvh;
   }
 
   .app-header {
-    padding: 0.5rem;
+    padding: 0.5rem 1rem;
     position: sticky;
     top: 0;
     z-index: 100;
   }
 
   .app-title {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     gap: 0.3rem;
   }
 
   .title-icon {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
-  .app-subtitle {
-    font-size: 0.75rem;
-    margin-top: 0.15rem;
-    display: none;
+  /* Mobile Tabs */
+  .mobile-tabs {
+    display: flex;
+    gap: 0;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0;
+    position: sticky;
+    top: 40px;
+    z-index: 99;
+  }
+
+  .mobile-tab {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+  }
+
+  .mobile-tab.active {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom-color: #667eea;
+  }
+
+  .mobile-hidden {
+    display: none !important;
   }
 
   .app-main {
     padding: 0.5rem;
-    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0));
   }
 
   .app-grid {
@@ -217,25 +293,42 @@ body {
 
   .panel-camera {
     padding-bottom: 0.5rem;
-    order: 1;
   }
 
-  .panel-preview {
-    order: 2;
+  /* Quick controls on mobile */
+  .quick-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+  }
+
+  .quick-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .quick-btn.active {
+    background: rgba(255, 215, 0, 0.3);
+    color: #ffd700;
   }
 
   .capture-section {
-    padding: 0.75rem 0;
+    padding: 0.5rem 0;
   }
 
   .app-footer {
-    font-size: 0.65rem;
-    padding: 0.5rem;
     display: none;
-  }
-
-  .app-footer p {
-    line-height: 1.3;
   }
 }
 
@@ -246,14 +339,20 @@ body {
   }
 
   .app-title {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
 
   .title-icon {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 
   .panel {
     padding: 0.5rem;
+  }
+
+  .quick-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
   }
 }

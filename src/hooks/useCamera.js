@@ -6,12 +6,29 @@ export const useCamera = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState(null);
   const [facingMode, setFacingMode] = useState('user');
-  const [zoomLevel, setZoomLevel] = useState(1); // 1 = normal, 0.5 = wide angle
+  const [isWideAngle, setIsWideAngle] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [availableCameras, setAvailableCameras] = useState([]);
   const isRestartingRef = useRef(false);
 
-  const startCamera = useCallback(async () => {
+  // Get all available cameras
+  const getCameras = useCallback(async () => {
     try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = devices.filter(device => device.kind === 'videoinput');
+      setAvailableCameras(cameras);
+      return cameras;
+    } catch (err) {
+      console.error('Error getting cameras:', err);
+      return [];
+    }
+  }, []);
+
+  const startCamera = useCallback(async (useWide = false) => {
+    try {
+      // First, get available cameras
+      await getCameras();
+
       const constraints = {
         video: {
           facingMode: facingMode,
@@ -21,8 +38,28 @@ export const useCamera = () => {
         audio: false,
       };
 
+      // Try to use zoom constraint for wide angle
+      if (useWide) {
+        constraints.video.zoom = { ideal: 0.5 };
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
+
+      // Try to apply zoom after getting stream (for devices that support it)
+      if (useWide) {
+        const videoTrack = stream.getVideoTracks()[0];
+        const capabilities = videoTrack.getCapabilities?.();
+        if (capabilities?.zoom && capabilities.zoom.min < 1) {
+          try {
+            await videoTrack.applyConstraints({
+              advanced: [{ zoom: capabilities.zoom.min }]
+            });
+          } catch (e) {
+            console.log('Zoom not supported on this device');
+          }
+        }
+      }
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -35,7 +72,7 @@ export const useCamera = () => {
       setError('Không thể truy cập camera. Vui lòng cấp quyền truy cập camera.');
       setIsStreaming(false);
     }
-  }, [facingMode]);
+  }, [facingMode, getCameras]);
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -64,6 +101,7 @@ export const useCamera = () => {
     // Toggle facing mode
     const newFacingMode = facingMode === 'user' ? 'environment' : 'user';
     setFacingMode(newFacingMode);
+    setIsWideAngle(false); // Reset wide angle when switching camera
     
     // Restart with new facing mode if was streaming
     if (wasStreaming) {
@@ -93,9 +131,33 @@ export const useCamera = () => {
     isRestartingRef.current = false;
   }, [facingMode]);
 
-  const toggleZoom = useCallback(() => {
-    setZoomLevel(prev => prev === 1 ? 0.5 : 1);
-  }, []);
+  const toggleWideAngle = useCallback(async () => {
+    if (!streamRef.current) return;
+
+    const videoTrack = streamRef.current.getVideoTracks()[0];
+    const capabilities = videoTrack.getCapabilities?.();
+    
+    if (capabilities?.zoom) {
+      const newIsWide = !isWideAngle;
+      setIsWideAngle(newIsWide);
+      
+      try {
+        await videoTrack.applyConstraints({
+          advanced: [{ 
+            zoom: newIsWide ? capabilities.zoom.min : 1 
+          }]
+        });
+      } catch (e) {
+        console.log('Zoom adjustment failed:', e);
+        // Fallback: restart camera
+        setIsWideAngle(false);
+      }
+    } else {
+      // Device doesn't support zoom
+      setError('Camera này không hỗ trợ góc rộng');
+      setTimeout(() => setError(null), 2000);
+    }
+  }, [isWideAngle]);
 
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen(prev => !prev);
@@ -118,13 +180,6 @@ export const useCamera = () => {
     // Calculate source dimensions
     let sourceWidth = video.videoWidth;
     let sourceHeight = video.videoHeight;
-
-    // Apply zoom effect (0.5x means we use more of the frame)
-    if (zoomLevel === 0.5) {
-      // For 0.5x, we don't crop - use full frame
-      sourceWidth = video.videoWidth;
-      sourceHeight = video.videoHeight;
-    }
 
     // Calculate aspect ratio crop
     const videoAspect = sourceWidth / sourceHeight;
@@ -204,7 +259,7 @@ export const useCamera = () => {
 
     // Return high quality JPEG
     return canvas.toDataURL('image/jpeg', 0.95);
-  }, [isStreaming, zoomLevel, facingMode]);
+  }, [isStreaming, facingMode]);
 
   useEffect(() => {
     return () => {
@@ -217,12 +272,12 @@ export const useCamera = () => {
     isStreaming,
     error,
     facingMode,
-    zoomLevel,
+    isWideAngle,
     isFullscreen,
     startCamera,
     stopCamera,
     switchCamera,
-    toggleZoom,
+    toggleWideAngle,
     toggleFullscreen,
     captureFrame,
   };

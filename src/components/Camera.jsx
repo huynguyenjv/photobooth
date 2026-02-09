@@ -2,7 +2,20 @@ import { forwardRef } from 'react';
 import { getCssFilter } from '../utils/filters';
 import './Camera.css';
 
-const Camera = forwardRef(({ filter, aspectRatio, isStreaming, error, isFullscreen, zoomLevel, onExitFullscreen }, ref) => {
+const Camera = forwardRef(({ 
+  filter, 
+  aspectRatio, 
+  isStreaming, 
+  error, 
+  isFullscreen, 
+  isWideAngle, 
+  onExitFullscreen,
+  onCapture,
+  onSwitchCamera,
+  onToggleWide,
+  photosCount,
+  maxPhotos
+}, ref) => {
   const getAspectRatioStyle = () => {
     switch (aspectRatio) {
       case '1:1':
@@ -13,14 +26,6 @@ const Camera = forwardRef(({ filter, aspectRatio, isStreaming, error, isFullscre
       default:
         return { aspectRatio: '4 / 3' };
     }
-  };
-
-  const getZoomStyle = () => {
-    // 0.5x zoom means we zoom out to show more (simulate ultra-wide)
-    if (zoomLevel === 0.5) {
-      return { transform: 'scaleX(-1) scale(0.85)', transformOrigin: 'center center' };
-    }
-    return { transform: 'scaleX(-1)' };
   };
 
   return (
@@ -36,10 +41,7 @@ const Camera = forwardRef(({ filter, aspectRatio, isStreaming, error, isFullscre
             autoPlay
             playsInline
             muted
-            style={{ 
-              filter: getCssFilter(filter),
-              ...getZoomStyle()
-            }}
+            style={{ filter: getCssFilter(filter) }}
           />
           {!isStreaming && !error && (
             <div className="camera-placeholder">
@@ -53,17 +55,47 @@ const Camera = forwardRef(({ filter, aspectRatio, isStreaming, error, isFullscre
               <p>{error}</p>
             </div>
           )}
+          
+          {/* Fullscreen Controls */}
           {isFullscreen && (
-            <button className="fullscreen-close-btn" onClick={onExitFullscreen}>
-              ✕
-            </button>
-          )}
-          {isFullscreen && zoomLevel === 0.5 && (
-            <div className="zoom-indicator">0.5x</div>
+            <>
+              {/* Top bar */}
+              <div className="fullscreen-top-bar">
+                <button className="fullscreen-btn-icon" onClick={onExitFullscreen}>
+                  ✕
+                </button>
+                <div className="fullscreen-photo-count">
+                  {photosCount}/{maxPhotos}
+                </div>
+                <button className="fullscreen-btn-icon" onClick={onSwitchCamera}>
+                  🔄
+                </button>
+              </div>
+
+              {/* Bottom bar */}
+              <div className="fullscreen-bottom-bar">
+                <button 
+                  className={`fullscreen-zoom-btn ${isWideAngle ? 'active' : ''}`}
+                  onClick={onToggleWide}
+                >
+                  {isWideAngle ? '1x' : '0.5x'}
+                </button>
+                
+                <button 
+                  className="fullscreen-capture-btn"
+                  onClick={onCapture}
+                  disabled={photosCount >= maxPhotos}
+                >
+                  <span className="capture-ring"></span>
+                </button>
+                
+                <div className="fullscreen-spacer"></div>
+              </div>
+            </>
           )}
         </div>
       </div>
-      {isFullscreen && <div className="fullscreen-overlay" onClick={onExitFullscreen} />}
+      {isFullscreen && <div className="fullscreen-overlay" />}
     </>
   );
 });
