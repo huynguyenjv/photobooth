@@ -1027,10 +1027,10 @@ export const TEMPLATES = [
     photoGap: 10,
     innerPadding: 10,
     decorations: [
-      { type: 'image', src: '/src/assets/templates/tiger/tiger-can.png', position: 'bottom-left', size: 140, rotate: -15 },
-      { type: 'image', src: '/src/assets/templates/tiger/tiger-can.png', position: 'bottom-right', size: 140, rotate: 15 },
+      { type: 'image', src: './assets/templates/tiger/tiger-can.png', position: 'bottom-left', size: 140, rotate: -15 },
+      { type: 'image', src: './assets/templates/tiger/tiger-can.png', position: 'bottom-right', size: 140, rotate: 15 },
     ],
-    logoImage: '/src/assets/templates/tiger/tiger-logo.webp',
+    logoImage: './assets/templates/tiger/tiger-logo.webp',
     logoSize: 1.5,
   },
   {
