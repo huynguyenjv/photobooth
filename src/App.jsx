@@ -23,9 +23,13 @@ function App() {
     videoRef,
     isStreaming,
     error,
+    zoomLevel,
+    isFullscreen,
     startCamera,
     stopCamera,
     switchCamera,
+    toggleZoom,
+    toggleFullscreen,
     captureFrame,
   } = useCamera();
 
@@ -81,6 +85,10 @@ function App() {
     console.log('Photo printed!');
   }, []);
 
+  const handleExitFullscreen = useCallback(() => {
+    toggleFullscreen();
+  }, [toggleFullscreen]);
+
   return (
     <div className="app">
       <header className="app-header">
@@ -101,6 +109,9 @@ function App() {
               aspectRatio={aspectRatio}
               isStreaming={isStreaming}
               error={error}
+              isFullscreen={isFullscreen}
+              zoomLevel={zoomLevel}
+              onExitFullscreen={handleExitFullscreen}
             />
 
             <div className="capture-section">
@@ -129,6 +140,9 @@ function App() {
               onSwitchCamera={switchCamera}
               isStreaming={isStreaming}
               onStopCamera={stopCamera}
+              zoomLevel={zoomLevel}
+              onToggleZoom={toggleZoom}
+              onToggleFullscreen={toggleFullscreen}
             />
 
             <ImageUpload

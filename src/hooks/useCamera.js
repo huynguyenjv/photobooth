@@ -6,6 +6,8 @@ export const useCamera = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState(null);
   const [facingMode, setFacingMode] = useState('user');
+  const [zoomLevel, setZoomLevel] = useState(1); // 1 = normal, 0.5 = wide angle
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const isRestartingRef = useRef(false);
 
   const startCamera = useCallback(async () => {
@@ -13,8 +15,8 @@ export const useCamera = () => {
       const constraints = {
         video: {
           facingMode: facingMode,
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
         },
         audio: false,
       };
@@ -44,6 +46,7 @@ export const useCamera = () => {
       videoRef.current.srcObject = null;
     }
     setIsStreaming(false);
+    setIsFullscreen(false);
   }, []);
 
   const switchCamera = useCallback(async () => {
@@ -68,8 +71,8 @@ export const useCamera = () => {
         const constraints = {
           video: {
             facingMode: newFacingMode,
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
           },
           audio: false,
         };
@@ -90,6 +93,14 @@ export const useCamera = () => {
     isRestartingRef.current = false;
   }, [facingMode]);
 
+  const toggleZoom = useCallback(() => {
+    setZoomLevel(prev => prev === 1 ? 0.5 : 1);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen(prev => !prev);
+  }, []);
+
   const captureFrame = useCallback((filter = 'none', aspectRatio = '4:3') => {
     if (!videoRef.current || !isStreaming) return null;
 
@@ -97,33 +108,50 @@ export const useCamera = () => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    // Calculate dimensions based on aspect ratio
-    let width, height;
-    if (aspectRatio === '1:1') {
-      const size = Math.min(video.videoWidth, video.videoHeight);
-      width = size;
-      height = size;
-    } else if (aspectRatio === '4:3') {
-      width = video.videoWidth;
-      height = (video.videoWidth * 3) / 4;
-    } else {
-      width = video.videoWidth;
-      height = video.videoHeight;
+    // Full HD resolution for high quality
+    const targetWidth = 1920;
+    const targetHeight = aspectRatio === '1:1' ? 1920 : aspectRatio === '16:9' ? 1080 : 1440;
+
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    // Calculate source dimensions
+    let sourceWidth = video.videoWidth;
+    let sourceHeight = video.videoHeight;
+
+    // Apply zoom effect (0.5x means we use more of the frame)
+    if (zoomLevel === 0.5) {
+      // For 0.5x, we don't crop - use full frame
+      sourceWidth = video.videoWidth;
+      sourceHeight = video.videoHeight;
     }
 
-    canvas.width = width;
-    canvas.height = height;
+    // Calculate aspect ratio crop
+    const videoAspect = sourceWidth / sourceHeight;
+    const targetAspect = targetWidth / targetHeight;
 
-    // Calculate crop position for center crop
-    const sx = (video.videoWidth - width) / 2;
-    const sy = (video.videoHeight - height) / 2;
+    let sx = 0, sy = 0, sw = sourceWidth, sh = sourceHeight;
+
+    if (videoAspect > targetAspect) {
+      // Video is wider - crop horizontally
+      sw = sourceHeight * targetAspect;
+      sx = (sourceWidth - sw) / 2;
+    } else {
+      // Video is taller - crop vertically
+      sh = sourceWidth / targetAspect;
+      sy = (sourceHeight - sh) / 2;
+    }
 
     // Mirror the image for selfie camera
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
+    if (facingMode === 'user') {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
 
-    // Draw the video frame
-    ctx.drawImage(video, sx, sy, width, height, 0, 0, width, height);
+    // Draw the video frame with high quality
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
 
     // Reset transform
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -142,35 +170,6 @@ export const useCamera = () => {
             data[i + 2] = gray;
           }
           break;
-        case 'sepia':
-          for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            data[i] = Math.min(255, r * 0.393 + g * 0.769 + b * 0.189);
-            data[i + 1] = Math.min(255, r * 0.349 + g * 0.686 + b * 0.168);
-            data[i + 2] = Math.min(255, r * 0.272 + g * 0.534 + b * 0.131);
-          }
-          break;
-        case 'vintage':
-          for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            data[i] = Math.min(255, r * 0.9 + 40);
-            data[i + 1] = Math.min(255, g * 0.7 + 20);
-            data[i + 2] = Math.min(255, b * 0.5);
-          }
-          break;
-        case 'contrast': {
-          const factor = 1.5;
-          for (let i = 0; i < data.length; i += 4) {
-            data[i] = Math.min(255, Math.max(0, factor * (data[i] - 128) + 128));
-            data[i + 1] = Math.min(255, Math.max(0, factor * (data[i + 1] - 128) + 128));
-            data[i + 2] = Math.min(255, Math.max(0, factor * (data[i + 2] - 128) + 128));
-          }
-          break;
-        }
         case 'warm':
           for (let i = 0; i < data.length; i += 4) {
             data[i] = Math.min(255, data[i] + 30);
@@ -183,50 +182,19 @@ export const useCamera = () => {
             data[i + 2] = Math.min(255, data[i + 2] + 30);
           }
           break;
-        case 'beauty':
-        case 'beauty-soft':
-        case 'beauty-glow': {
-          // Làm sáng và mịn da
-          const brightness = filter === 'beauty-glow' ? 1.12 : filter === 'beauty-soft' ? 1.08 : 1.05;
-          const contrast = filter === 'beauty-soft' ? 0.92 : 0.95;
+        case 'beauty': {
+          const brightness = 1.05;
+          const contrast = 0.95;
           for (let i = 0; i < data.length; i += 4) {
-            // Tăng sáng
             data[i] = Math.min(255, data[i] * brightness);
             data[i + 1] = Math.min(255, data[i + 1] * brightness);
             data[i + 2] = Math.min(255, data[i + 2] * brightness);
-            // Giảm contrast để mịn hơn
             data[i] = Math.min(255, Math.max(0, contrast * (data[i] - 128) + 128));
             data[i + 1] = Math.min(255, Math.max(0, contrast * (data[i + 1] - 128) + 128));
             data[i + 2] = Math.min(255, Math.max(0, contrast * (data[i + 2] - 128) + 128));
-            // Tăng đỏ/hồng nhẹ cho da
-            data[i] = Math.min(255, data[i] + 5);
           }
           break;
         }
-        case 'pink':
-          for (let i = 0; i < data.length; i += 4) {
-            data[i] = Math.min(255, data[i] * 1.1 + 15);
-            data[i + 1] = Math.min(255, data[i + 1] * 0.95);
-            data[i + 2] = Math.min(255, data[i + 2] * 1.05 + 10);
-          }
-          break;
-        case 'vivid': {
-          const satFactor = 1.4;
-          for (let i = 0; i < data.length; i += 4) {
-            const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-            data[i] = Math.min(255, Math.max(0, gray + satFactor * (data[i] - gray)));
-            data[i + 1] = Math.min(255, Math.max(0, gray + satFactor * (data[i + 1] - gray)));
-            data[i + 2] = Math.min(255, Math.max(0, gray + satFactor * (data[i + 2] - gray)));
-          }
-          break;
-        }
-        case 'fade':
-          for (let i = 0; i < data.length; i += 4) {
-            data[i] = Math.min(255, data[i] * 0.9 + 25);
-            data[i + 1] = Math.min(255, data[i + 1] * 0.9 + 25);
-            data[i + 2] = Math.min(255, data[i + 2] * 0.9 + 25);
-          }
-          break;
         default:
           break;
       }
@@ -234,8 +202,9 @@ export const useCamera = () => {
       ctx.putImageData(imageData, 0, 0);
     }
 
-    return canvas.toDataURL('image/png');
-  }, [isStreaming]);
+    // Return high quality JPEG
+    return canvas.toDataURL('image/jpeg', 0.95);
+  }, [isStreaming, zoomLevel, facingMode]);
 
   useEffect(() => {
     return () => {
@@ -248,9 +217,13 @@ export const useCamera = () => {
     isStreaming,
     error,
     facingMode,
+    zoomLevel,
+    isFullscreen,
     startCamera,
     stopCamera,
     switchCamera,
+    toggleZoom,
+    toggleFullscreen,
     captureFrame,
   };
 };

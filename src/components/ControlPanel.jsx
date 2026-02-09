@@ -9,6 +9,9 @@ const ControlPanel = ({
   onSwitchCamera,
   isStreaming,
   onStopCamera,
+  zoomLevel,
+  onToggleZoom,
+  onToggleFullscreen,
 }) => {
   return (
     <div className="control-panel">
@@ -45,12 +48,21 @@ const ControlPanel = ({
       {isStreaming && (
         <div className="control-group">
           <label className="control-label">📷 Camera</label>
-          <div className="control-options">
+          <div className="control-options camera-controls">
             <button className="control-button" onClick={onSwitchCamera}>
               🔄 Đổi camera
             </button>
+            <button 
+              className={`control-button ${zoomLevel === 0.5 ? 'active' : ''}`} 
+              onClick={onToggleZoom}
+            >
+              {zoomLevel === 0.5 ? '1x' : '0.5x'}
+            </button>
+            <button className="control-button fullscreen-btn" onClick={onToggleFullscreen}>
+              ⛶ Toàn màn hình
+            </button>
             <button className="control-button danger" onClick={onStopCamera}>
-              ⏹️ Tắt camera
+              ⏹️ Tắt
             </button>
           </div>
         </div>
