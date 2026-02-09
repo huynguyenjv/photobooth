@@ -162,16 +162,36 @@
     max-width: 100%;
   }
 
+  /* Khi chưa bật camera, giảm chiều cao placeholder */
+  .camera-wrapper:has(.camera-placeholder) {
+    aspect-ratio: 4 / 3;
+    max-height: 280px;
+  }
+
   .camera-icon,
   .error-icon {
-    font-size: 2.5rem;
-    margin-bottom: 0.75rem;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
   }
 
   .camera-placeholder p,
   .camera-error p {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     padding: 0 0.75rem;
     text-align: center;
+  }
+
+  .fullscreen-close-btn {
+    top: 15px;
+    right: 15px;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .zoom-indicator {
+    bottom: 15px;
+    padding: 6px 12px;
+    font-size: 12px;
   }
 }
